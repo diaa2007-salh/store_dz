@@ -1,0 +1,199 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  customer
+}
+
+enum OrderStatus {
+  pending
+  processing
+  shipped
+  delivered
+  cancelled
+  returned
+}
+
+enum ShippingType {
+  home
+  desk
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         Role     @default(customer)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orders       Order[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  nameAr      String
+  nameFr      String
+  nameEn      String
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id              String      @id @default(cuid())
+  titleAr         String
+  titleFr         String
+  titleEn         String
+  descriptionAr   String      @db.Text
+  descriptionFr   String      @db.Text
+  descriptionEn   String      @db.Text
+  price           Float
+  compareAtPrice  Float?
+  costPrice       Float?
+  sku             String?     @unique
+  barcode         String?
+  stockCount      Int         @default(0)
+  lowStockAlert   Int         @default(5)
+  weight          Float?
+  images          String[]
+  isActive        Boolean     @default(true)
+  isFeatured      Boolean     @default(false)
+  rating          Float       @default(0)
+  reviewCount     Int         @default(0)
+  soldCount       Int         @default(0)
+  categoryId      String?
+  category        Category?   @relation(fields: [categoryId], references: [id])
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  orderItems      OrderItem[]
+
+  @@map("products")
+}
+
+model Wilaya {
+  id                String   @id @default(cuid())
+  code              Int      @unique
+  nameAr            String
+  nameFr            String
+  nameEn            String
+  homeDeliveryPrice Float    @default(400)
+  deskDeliveryPrice Float    @default(200)
+  isActive          Boolean  @default(true)
+  communes          Commune[]
+  orders            Order[]
+
+  @@map("wilayas")
+}
+
+model Commune {
+  id       String @id @default(cuid())
+  nameAr   String
+  nameFr   String
+  nameEn   String
+  wilayaId String
+  wilaya   Wilaya @relation(fields: [wilayaId], references: [id])
+  orders   Order[]
+
+  @@map("communes")
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id])
+  
+  // Customer info (for guest checkout)
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  
+  // Shipping address
+  wilayaId        String
+  wilaya          Wilaya      @relation(fields: [wilayaId], references: [id])
+  communeId       String?
+  commune         Commune?    @relation(fields: [communeId], references: [id])
+  shippingType    ShippingType @default(home)
+  addressDetails  String?
+  
+  // Financials (DZD)
+  subtotal        Float
+  shippingCost    Float
+  total           Float
+  
+  // Status & tracking
+  status          OrderStatus @default(pending)
+  trackingCode    String?
+  yalidineId      String?
+  notes           String?
+  
+  // Metadata
+  shippingAddress Json
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  items           OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  titleAr    String
+  titleFr    String
+  titleEn    String
+  price      Float
+  quantity   Int
+  imageUrl   String?
+  createdAt  DateTime @default(now())
+
+  @@map("order_items")
+}
+
+model Settings {
+  id              String   @id @default(cuid())
+  storeNameAr     String   @default("متجر الجزائر")
+  storeNameFr     String   @default("Store Algérie")
+  storeNameEn     String   @default("Algeria Store")
+  email           String?
+  phone           String?
+  address         String?
+  facebook        String?
+  instagram       String?
+  tiktok          String?
+  whatsapp        String?
+  logoUrl         String?
+  currency        String   @default("DZD")
+  defaultLocale   String   @default("ar")
+  maintenanceMode Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("settings")
+}
