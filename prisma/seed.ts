@@ -193,7 +193,8 @@ async function main() {
     { nameAr: "الرياضة",        nameFr: "Sport",           nameEn: "Sports",         slug: "sports" },
     { nameAr: "الجمال والعناية",nameFr: "Beauté & Soins",   nameEn: "Beauty & Care",  slug: "beauty" },
   ];
-  for (const [i, cat] of cats.entries()) {
+  for (let i = 0; i < cats.length; i++) {
+    const cat = cats[i];
     await prisma.category.upsert({
       where: { slug: cat.slug },
       update: {},
