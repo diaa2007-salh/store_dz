@@ -97,7 +97,7 @@ html {
   }
 
   .product-card {
-    @apply card overflow-hidden group hover:shadow-lg hover:-translate-y-0.5
+    @apply card overflow-hidden hover:shadow-lg hover:-translate-y-0.5
            transition-all duration-300 cursor-pointer;
   }
 
